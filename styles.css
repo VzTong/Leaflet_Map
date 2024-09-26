@@ -1,0 +1,99 @@
+* {
+    margin: 0;
+    padding: 0;
+}
+
+html, body {
+    height: 100%;
+    margin: 0;
+}
+
+table{
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+table > th,td{
+    border: 1px solid #ffffff;
+    padding: 8px;
+}
+th{
+    background-color: #0000007e;
+    color: #aceeff;
+}
+
+#map {
+    height: 100vh; /* Chiếm toàn bộ chiều cao của viewport */
+    width: 100vw; /* Chiếm toàn bộ chiều rộng của viewport */
+}
+
+/* Tùy chỉnh đường đi */
+.leaflet-routing-line {
+    stroke: #ff3700ef !important; /* Màu đường đi */
+    stroke-width: 4px !important; /* Độ dày của đường đi */
+}
+
+/* Tùy chỉnh khung hướng dẫn lộ trình */
+.leaflet-routing-container {
+    background-color: rgba(0, 0, 0, 0.7) !important; /* Nền mờ màu đen */
+    color: #fff !important; /* Màu chữ trắng */
+    border-radius: 5px; /* Bo tròn góc */
+    padding: 10px; /* Khoảng cách bên trong */
+    max-height: 450px; /* Giới hạn chiều cao khung hướng dẫn */
+    overflow-y: auto; /* Thêm thanh cuộn dọc */
+    scrollbar-color: #089d73 #333; /* Thanh cuộn cho Firefox */
+    scrollbar-width: thin; /* Độ rộng của thanh cuộn cho Firefox */
+    z-index: 1000; /* Đảm bảo bảng điều hướng nổi bật hơn */
+    cursor: pointer;
+}
+
+/* Tùy chỉnh thanh trượt cho WebKit (Chrome, Safari) */
+.leaflet-routing-container::-webkit-scrollbar {
+    width: 10px;
+}
+
+/* Tùy chỉnh tên đường trong hướng dẫn */
+.leaflet-routing-instructions .route-name {
+    flex: 1; /* Cho phần tên đường chiếm không gian còn lại */
+}
+
+/* Tùy chỉnh khoảng cách trong hướng dẫn */
+.leaflet-routing-instructions .route-distance {
+    text-align: right; /* Căn lề phải */
+}
+
+#journeyList {
+    position: absolute;
+    top: calc(470px + 20px); /* Đặt vị trí ngay dưới bản đồ */
+    right: 10px; /* Khoảng cách từ bên phải */
+    background-color:  rgba(0, 0, 0, 0.7);
+    color: #fff;
+    padding: 0px 0px 10px 0px;
+    border-radius: 5px;
+    box-shadow: 0 2px 10px rgba(255, 255, 255, 0.2);
+    z-index: 1000;
+
+    max-width: 450px; /* Giới hạn chiều cao tối đa */
+    max-height: 100px;
+    overflow-y: auto; /* Thêm thanh cuộn khi cần */
+    border: 1px solid #ccc; /* Thêm viền cho rõ ràng */
+
+    scrollbar-color: #089d73 #333; /* Thanh cuộn cho Firefox */
+    scrollbar-width: thin; /* Độ rộng của thanh cuộn cho Firefox */
+}
+
+#fixedHeader {
+    position: sticky;
+    top: 0;
+    background-color: rgba(0, 0, 0, 0.9); /* Màu nền để không bị đè bởi nội dung */
+    z-index: 10; /* Đảm bảo tiêu đề luôn nằm trên nội dung khác */
+    padding: 10px 0;
+}
+
+#journeyNames {
+    padding: 0px 10px;
+    white-space: wrap; /* Ngăn không cho dòng xuống dòng */
+    overflow-x: auto; /* Thêm thanh cuộn ngang nếu cần */
+    cursor: pointer;
+}
