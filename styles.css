@@ -75,7 +75,7 @@ th{
     z-index: 1000;
 
     max-width: 450px; /* Giới hạn chiều cao tối đa */
-    max-height: 100px;
+    max-height: 150px;
     overflow-y: auto; /* Thêm thanh cuộn khi cần */
     border: 1px solid #ccc; /* Thêm viền cho rõ ràng */
 
