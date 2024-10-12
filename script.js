@@ -16,42 +16,14 @@ var defaults = [
 var markers = [];  // Lưu trữ các marker hiện có
 var routingControl;  // Đối tượng kiểm soát đường đi
 
-// Mảng lưu trữ lịch sử hành trình
-let journeyHistory = []; // Lịch sử tọa độ đã vẽ
+// Mảng lưu trữ lịch sử các polyline
+let journeyPolylines = []; // Danh sách các đoạn polyline (không liền kề)
 
 // Thêm các điểm mặc định vào bản đồ
 defaults.forEach(function(store) {
     var marker = L.marker(store.coords).addTo(map)
         .bindPopup(store.name);
     markers.push(marker);
-});
-
-// Hiển thị tuyến đường từ Đại học Cần Thơ đến Bến Ninh Kiều ngay từ đầu
-routingControl = L.Routing.control({
-    waypoints: [
-        L.latLng(defaults[0].coords), // Đại học Cần Thơ
-        L.latLng(defaults[1].coords)  // Bến Ninh Kiều
-    ],
-    routeWhileDragging: true,
-    lineOptions: {
-        styles: [{ className: 'leaflet-routing-line' }]
-    }
-}).addTo(map);
-
-// Lắng nghe sự kiện khi tuyến đường mặc định đã được tính toán
-routingControl.on('routesfound', function(e) {
-    var routes = e.routes;
-    var route = routes[0]; // Chọn tuyến đường đầu tiên (chính)
-
-    // Thêm các đoạn đường từ route đã tính toán vào journeyHistory
-    route.coordinates.forEach(function(coord) {
-        // Kiểm tra xem tọa độ đã có trong journeyHistory chưa
-        if (!journeyHistory.some(h => h[0] === coord.lat && h[1] === coord.lng)) {
-            journeyHistory.push([coord.lat, coord.lng]);
-        }
-    });
-
-    drawHistoryPolyline(); // Vẽ lại lịch sử hành trình
 });
 
 // Hàm reverse geocoding sử dụng Nominatim để lấy tên địa điểm từ tọa độ
@@ -74,9 +46,31 @@ function reverseGeocode(latlng, callback) {
         });
 }
 
+// Hàm tính khoảng cách giữa hai điểm
+function getDistance(latlng1, latlng2) {
+    return latlng1.distanceTo(latlng2); // Sử dụng phương thức có sẵn của Leaflet
+}
+
+// Hàm để tìm điểm mặc định gần nhất
+function findClosestDefault(latlng) {
+    let closestPoint = defaults[0];
+    let minDistance = getDistance(latlng, L.latLng(defaults[0].coords));
+
+    defaults.forEach(function(store) {
+        let distance = getDistance(latlng, L.latLng(store.coords));
+        if (distance < minDistance) {
+            closestPoint = store;
+            minDistance = distance;
+        }
+    });
+
+    return closestPoint;
+}
+
 // Sự kiện click trên bản đồ
 map.on('click', function(e) {
     var latlng = e.latlng;
+    var closestDefault = findClosestDefault(latlng); // Tìm điểm mặc định gần nhất
 
     reverseGeocode(latlng, function(locationName) {
         var newMarker = L.marker(latlng).addTo(map)
@@ -86,10 +80,10 @@ map.on('click', function(e) {
 
         // Chỉ vẽ lại lịch sử khi có điểm mới được thêm
         if (markers.length >= 2) {
-            // Lấy waypoint cho tuyến đường mới
+            // Lấy waypoint cho tuyến đường từ điểm mặc định gần nhất đến điểm mới
             var waypoints = [
-                markers[markers.length - 2].getLatLng(), // Từ điểm gần cuối
-                newMarker.getLatLng() // Đến điểm mới
+                L.latLng(closestDefault.coords), // Điểm mặc định gần nhất
+                newMarker.getLatLng() // Điểm mới
             ];
 
             // Xóa routingControl cũ nếu có
@@ -97,7 +91,7 @@ map.on('click', function(e) {
                 map.removeControl(routingControl);
             }
 
-            // Tạo routingControl với hai waypoint gần nhất
+            // Tạo routingControl với waypoint từ điểm mặc định gần nhất
             routingControl = L.Routing.control({
                 waypoints: waypoints,
                 routeWhileDragging: true,
@@ -111,41 +105,18 @@ map.on('click', function(e) {
                 var routes = e.routes;
                 var route = routes[0]; // Chọn tuyến đường đầu tiên (chính)
 
-                // Thêm các đoạn đường từ route đã tính toán vào journeyHistory
-                route.coordinates.forEach(function(coord) {
-                    // Kiểm tra xem tọa độ đã có trong journeyHistory chưa
-                    if (!journeyHistory.some(h => h[0] === coord.lat && h[1] === coord.lng)) {
-                        journeyHistory.push([coord.lat, coord.lng]);
-                    }
-                });
-
-                // Vẽ lại đường lịch sử từ đầu đến điểm gần nhất (không vẽ tuyến đường mới nhất)
-                drawHistoryPolyline(); // Chỉ vẽ lịch sử, không bao gồm tuyến đường mới nhất
+                // Tạo polyline mới cho tuyến đường này
+                var newPolyline = L.polyline(route.coordinates, { color: 'blue', dashArray: '5, 5' }).addTo(map);
+                journeyPolylines.push(newPolyline); // Lưu polyline vào danh sách
 
                 // Phóng to vào cả waypoint và đường đi
-                var allWaypoints = journeyHistory.slice(-0.9).concat(waypoints); // Kết hợp đường đi vào
-                map.fitBounds(L.latLngBounds(allWaypoints)); // Điều chỉnh bản đồ để bao gồm các waypoint và đường đi
+                map.fitBounds(newPolyline.getBounds()); // Điều chỉnh bản đồ để bao gồm đường mới
             });
-        } else {
-            journeyHistory.push([latlng.lat, latlng.lng]); // Chỉ thêm vào history khi là điểm đầu tiên
         }
 
         updateJourneyNames();
     });
 });
-
-// Hàm để vẽ lại lịch sử hành trình
-function drawHistoryPolyline() {
-    if (map.polyline) {
-        map.removeLayer(map.polyline); // Xóa đường lịch sử cũ nếu có
-    }
-
-    if (journeyHistory.length > 1) {
-        // Chỉ vẽ lịch sử đến điểm gần nhất, không bao gồm điểm cuối
-        var historyToDraw = journeyHistory.slice(0, -1); // Bỏ qua đoạn cuối cùng
-        map.polyline = L.polyline(historyToDraw, { color: 'blue', dashArray: '5, 5' }).addTo(map);
-    }
-}
 
 // Hàm để cập nhật danh sách tên các vị trí
 function updateJourneyNames() {
@@ -163,73 +134,93 @@ function updateJourneyNames() {
         // Tạo hàng tiêu đề
         const headerRow = document.createElement('tr');
         headerRow.innerHTML = `
-            <th>Điểm bắt đầu</th>
-            <th>Tên đường</th>
-            <th>Điểm kết thúc</th>`;
+            <th>Điểm bắt đầu (Điểm click)</th>
+            <th>Điểm kết thúc (Điểm mặc định gần nhất)</th>
+            <th>Tuyến đường</th>`;
         table.appendChild(headerRow);
 
-        markers.forEach((marker, index) => {
-            const name = marker.getPopup().getContent(); // Lấy tên từ popup
-            const row = document.createElement('tr'); // Tạo hàng mới cho mỗi vị trí
+        // Lặp qua các marker đã thêm bởi người dùng (bỏ qua các điểm mặc định)
+        markers.slice(2).forEach((marker, index) => {
+            // Lấy tọa độ của điểm đã click (bắt đầu từ vị trí thứ 3 trở đi, tức chỉ các điểm do người dùng thêm)
+            var startLatLng = marker.getLatLng();
 
-            // Tạo cột "Điểm bắt đầu"
+            // Tìm điểm mặc định gần nhất cho điểm này
+            var closestDefault = findClosestDefault(startLatLng);
+
+            const row = document.createElement('tr');
+
+            // Cột "Điểm bắt đầu" (tọa độ click)
             const startCell = document.createElement('td');
             startCell.style.textAlign = 'center';
-            startCell.textContent = `${index + 1}`;
+            startCell.textContent = marker.getPopup().getContent() || `(${startLatLng.lat}, ${startLatLng.lng})`;
 
-            // Tạo cột "Tên đường"
-            const nameCell = document.createElement('td');
-            nameCell.textContent = name;
-
-            // Tạo cột "Điểm kết thúc" chỉ nếu có điểm tiếp theo
-            let endCell = document.createElement('td');
-            if (markers[index + 1]) {
-                endCell.style.textAlign = 'center';
-                endCell.textContent = `${index + 2}`; // Gán giá trị điểm tiếp theo
-
-                // Thêm sự kiện hover cho cột "Điểm kết thúc"
-                endCell.addEventListener('mouseover', () => {
-                    const nextMarker = markers[index + 1];
-                    map.panTo(nextMarker.getLatLng()); // Căn giữa điểm tiếp theo
-                    nextMarker.openPopup(); // Mở popup cho điểm tiếp theo
-                });
-
-                endCell.addEventListener('mouseout', () => {
-                    markers[index + 1].closePopup(); // Đóng popup khi không hover
-                    panToLastMarker(); // Căn bản đồ về điểm mới nhất
-                });
-            } else {
-                // Nếu không có điểm đến tiếp theo, không hiển thị cột "Điểm kết thúc"
-                endCell.style.textAlign = 'center';
-                endCell.textContent = '---';
-            }
-
-            // Thêm sự kiện hover cho cột "Điểm bắt đầu"
+            // Hover vào ô "Điểm bắt đầu" để hiển thị popup và căn giữa bản đồ
             startCell.addEventListener('mouseover', () => {
-                map.panTo(marker.getLatLng()); // Căn giữa điểm vào tầm nhìn của bản đồ
-                marker.openPopup(); // Mở popup khi hover
+                map.panTo(marker.getLatLng());
+                marker.openPopup();
+            });
+            startCell.addEventListener('mouseout', () => {
+                marker.closePopup();
+                panToLastMarker();
             });
 
-            startCell.addEventListener('mouseout', () => {
-                marker.closePopup(); // Đóng popup khi không hover
-                panToLastMarker(); // Căn bản đồ về điểm mới nhất
+            // Cột "Điểm kết thúc" (điểm mặc định gần nhất)
+            const endCell = document.createElement('td');
+            endCell.style.textAlign = 'center';
+            endCell.textContent = closestDefault.name || `(${closestDefault.coords[0]}, ${closestDefault.coords[1]})`;
+
+            // Hover vào ô "Điểm kết thúc" để hiển thị popup của điểm gần nhất
+            endCell.addEventListener('mouseover', () => {
+                const nearestMarker = L.marker(closestDefault.coords).addTo(map).bindPopup(closestDefault.name).openPopup();
+                map.panTo(nearestMarker.getLatLng());
             });
+            endCell.addEventListener('mouseout', () => {
+                panToLastMarker();
+            });
+
+            // Cột "Tuyến đường" hiển thị khoảng cách giữa hai điểm
+            const routeCell = document.createElement('td');
+            routeCell.style.textAlign = 'center';
+
+            var distance = startLatLng.distanceTo(L.latLng(closestDefault.coords)); // Tính khoảng cách
+            var distanceKm = (distance / 1000).toFixed(2); // Đổi sang km
+
+            routeCell.textContent = `Khoảng cách: ${distanceKm} km`;
+
+            // Không cần hover cho ô "Tuyến đường"
 
             // Thêm các ô vào hàng
             row.appendChild(startCell);
-            row.appendChild(nameCell);
             row.appendChild(endCell);
+            row.appendChild(routeCell);
 
-            table.appendChild(row); // Thêm hàng vào bảng
+            // Thêm hàng vào bảng
+            table.appendChild(row);
         });
 
-        journeyNamesElement.appendChild(table); // Thêm bảng vào phần tử chứa
+        journeyNamesElement.appendChild(table);
     }
+}
+
+// Hàm tìm điểm mặc định gần nhất
+function findClosestDefault(latlng) {
+    let closest = defaults[0]; // Giả sử điểm đầu tiên là gần nhất
+    let minDistance = latlng.distanceTo(L.latLng(closest.coords)); // Khoảng cách đến điểm đầu tiên
+
+    defaults.forEach(defaultLocation => {
+        let distance = latlng.distanceTo(L.latLng(defaultLocation.coords));
+        if (distance < minDistance) {
+            minDistance = distance;
+            closest = defaultLocation; // Cập nhật điểm gần nhất
+        }
+    });
+
+    return closest; // Trả về điểm mặc định gần nhất
 }
 
 // Hàm để căn bản đồ về điểm mới nhất
 function panToLastMarker() {
-    if (markers.length > 0) {
+    if (markers.length > 2) { // Đảm bảo có ít nhất một điểm do người dùng thêm
         const lastMarker = markers[markers.length - 1];
         map.panTo(lastMarker.getLatLng());
     }
@@ -237,7 +228,7 @@ function panToLastMarker() {
 
 // Hàm để xem lịch sử hành trình
 function showJourneyHistory() {
-    console.log("Lịch sử hành trình:", journeyHistory);
+    console.log("Lịch sử hành trình:", journeyPolylines);
 }
 
 // Gọi hàm để xem lịch sử hành trình
