@@ -29,7 +29,10 @@ let journeyPolylines = []; // Danh sách các đoạn polyline (không liền k�
 defaults.forEach(function(store) {
     // Tạo marker cho điểm mặc định với màu cam và kích thước lớn hơn
     var defaultMarker = L.marker(store.coords, { icon: defaultMarkerIcon }).addTo(map)
-        .bindPopup(store.name).openPopup();
+        .bindPopup(store.name); // Gắn popup cho marker
+
+    // Mở popup ngay lập tức cho mỗi marker
+    defaultMarker.openPopup();
 
     // Thêm marker vào danh sách marker
     markers.push(defaultMarker);
