@@ -40,7 +40,7 @@ th{
     color: #fff !important; /* Màu chữ trắng */
     border-radius: 5px; /* Bo tròn góc */
     padding: 10px; /* Khoảng cách bên trong */
-    max-height: 450px; /* Giới hạn chiều cao khung hướng dẫn */
+    max-height: 350px; /* Giới hạn chiều cao khung hướng dẫn */
     overflow-y: auto; /* Thêm thanh cuộn dọc */
     scrollbar-color: #089d73 #333; /* Thanh cuộn cho Firefox */
     scrollbar-width: thin; /* Độ rộng của thanh cuộn cho Firefox */
@@ -66,7 +66,7 @@ th{
 /* Khung lịch sử */
 #journeyList {
     position: absolute;
-    top: calc(510px + 20px); /* Đặt vị trí ngay dưới bản đồ */
+    top: calc(450px + 20px); /* Đặt vị trí ngay dưới bản đồ */
     right: 10px; /* Khoảng cách từ bên phải */
     background-color:  rgba(0, 0, 0, 0.7);
     color: #fff;
@@ -76,7 +76,7 @@ th{
     z-index: 1000;
 
     max-width: 520px; /* Giới hạn chiều cao tối đa */
-    max-height: 150px;
+    max-height: 195px;
     overflow-y: auto; /* Thêm thanh cuộn khi cần */
     border: 1px solid #ccc; /* Thêm viền cho rõ ràng */
 

@@ -8,8 +8,8 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 
 // Danh sách các điểm mặc định ở Cần Thơ
 var defaults = [
-    { name: "Đại học Nam Cần Thơ", coords: [10.031785, 105.774657] },
-    { name: "Bến Ninh Kiều", coords: [10.033024, 105.782661] }
+    { name: "GS25", coords: [10.031785, 105.774657] },
+    { name: "Itada", coords: [10.033024, 105.782661] }
 ];
 
 // Tạo một biểu tượng marker tùy chỉnh cho điểm mặc định (màu cam)
